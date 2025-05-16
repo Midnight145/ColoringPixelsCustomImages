@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <AssemblyName>CustomImageMod</AssemblyName>
+        <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+        <TargetFramework>net472</TargetFramework>
+        <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+        <LangVersion>7.3</LangVersion>
+    </PropertyGroup>
+    <ItemGroup>
+        <Reference Include="UnityEngine.CoreModule">
+            <HintPath>lib/unity/UnityEngine.CoreModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.UI">
+            <HintPath>lib/unity/UnityEngine.UI.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.UIModule">
+            <HintPath>lib/unity/UnityEngine.UIModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine">
+            <HintPath>lib/unity/UnityEngine.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.TilemapModule">
+            <HintPath>lib/unity/UnityEngine.TilemapModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.TextRenderingModule">
+            <HintPath>lib/unity/UnityEngine.TextRenderingModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.ImageConversionModule">
+            <HintPath>lib/unity/UnityEngine.ImageConversionModule</HintPath>
+        </Reference>
+        <Reference Include="0Harmony20">
+            <HintPath>lib/bepinex/0Harmony20.dll</HintPath>
+        </Reference>
+        <Reference Include="BepInEx">
+            <HintPath>lib/bepinex/BepInEx.dll</HintPath>
+        </Reference>
+        <Reference Include="ColoringPixels">
+            <HintPath>lib/ColoringPixels.dll</HintPath>
+        </Reference>
+            <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
+        <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.7.0" />
+    </ItemGroup>
+</Project>
