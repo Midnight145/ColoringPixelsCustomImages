@@ -1,6 +1,5 @@
 using System.IO;
 using ColoringPixelsMod;
-using HarmonyLib;
 using UnityEngine;
 
     public class BookLoader : MonoBehaviour {
@@ -13,7 +12,6 @@ using UnityEngine;
         private static readonly string path = Path.Combine(Application.persistentDataPath, "Custom");
         private static readonly bool register = Directory.Exists(BookLoader.path);
 
-        // public static void AddCustomBook(ref BookDetails[] inst) {
         public static BookDetails[] AddCustomBook() {
             R allBookDetails = R.of(typeof(AllBookDetails));
             BookDetails[] inst = allBookDetails.GetField("_inst") as BookDetails[];

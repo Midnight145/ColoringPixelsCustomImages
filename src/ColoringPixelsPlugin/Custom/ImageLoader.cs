@@ -6,24 +6,28 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Threading;
+using BepInEx.Logging;
+using ColoringPixelsMod;
 using UnityEngine;
 
 public static class ImageLoader {
     public static LevelData[] levels;
 
+    private static ManualLogSource Logger = CustomImagesPlugin.Log;
+
     public static void Init() {
-        Debug.Log("Loading Custom Levels");
+        Logger.LogInfo("Loading Custom Levels");
         string path = Path.Combine(Application.persistentDataPath, "Custom");
         List<LevelData> levelList = new List<LevelData>();
         int index = 0;
-        var files = Directory.GetFiles(path).Where(file => file.EndsWith(".png")).ToArray();
+        string[] files = Directory.GetFiles(path).Where(file => file.EndsWith(".png")).ToArray();
         var data = new ConcurrentDictionary<string, Tuple<string, int, int, int, int>>();
         var pixels = new ConcurrentDictionary<string, Color32[]>();
         var quantizedPixels = new ConcurrentDictionary<string, Color32[]>();
         foreach (var file in files) {
             byte[] fileData = File.ReadAllBytes(file);
             if (fileData.Length == 0) {
-                Debug.LogError($"Failed to read file data for {file}");
+                Logger.LogError($"Failed to read file data for {file}");
                 continue;
             }
             Texture2D texture = new Texture2D(2, 2); // Temporary size, will adjust to the image size
@@ -31,11 +35,11 @@ public static class ImageLoader {
             
             
             if (!isLoaded) {
-                Debug.LogError($"Failed to load image data into texture for {file}");
+                Logger.LogError($"Failed to load image data into texture for {file}");
                 continue;
             }
             
-            Console.WriteLine("Processing file " + file);
+            Logger.LogDebug("Processing file " + file);
             string pattern = @"^.+/(?<name>.+?)_(?<dimension>\d+?)_(?<colors>\d+)\.png$";
             Regex regex = new Regex(pattern);
 
@@ -52,19 +56,19 @@ public static class ImageLoader {
                 colors = 25;
             }
 
-            Console.WriteLine("Matched " + name + " " + dimension + " " + colors);
+            Logger.LogDebug("Matched " + name + " " + dimension + " " + colors);
             Texture2D resizedImage = ImageProcessor.ResizeImage(texture, dimension);
             pixels[file] = resizedImage.GetPixels32();
-            Console.WriteLine("Resized image to " + resizedImage.width + "x" + resizedImage.height);
+            Logger.LogDebug("Resized image to " + resizedImage.width + "x" + resizedImage.height);
             data[file] = Tuple.Create(name, dimension, colors, resizedImage.width, resizedImage.height);
         }
 
         // Process files for resizing on the main thread
 
         Parallel.ForEach(files, file => {
-            Console.WriteLine("Starting quantization for " + data[file].Item1);
+            Logger.LogDebug("Starting quantization for " + data[file].Item1);
             quantizedPixels[file] = ImageProcessor.QuantizeImage(pixels[file], data[file].Item3);
-            Console.WriteLine("Quantized image for " + data[file].Item1);
+            Logger.LogDebug("Quantized image for " + data[file].Item1);
         });
         
         foreach (var file in files) {
@@ -75,9 +79,9 @@ public static class ImageLoader {
             quantizedImage.SetPixels32(newPixels);
             quantizedImage.Apply();
             Sprite sprite = Sprite.Create(quantizedImage, new Rect(0, 0, quantizedImage.width, quantizedImage.height), new Vector2(0.5f, 0.5f));
-            Console.WriteLine("Successfully created sprite for " + name);
+            Logger.LogDebug("Successfully created sprite for " + name);
 
-            Console.WriteLine("Extracting colors...");
+            Logger.LogDebug("Extracting colors...");
             List<(int, int, int)> colors_ = LevelDataCreator.ExtractColors(quantizedImage);
             LevelDataCreator creator = new LevelDataCreator(quantizedImage, colors_);
             List<short> fullLevelData = new List<short>();
@@ -91,7 +95,7 @@ public static class ImageLoader {
                 levelSprite = sprite
             };
             levelList.Add(level);
-            Debug.Log("Loaded " + name);
+            Logger.LogInfo("Loaded " + name);
             
         }
 
