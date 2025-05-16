@@ -20,11 +20,43 @@ public static class ImageLoader {
         string path = Path.Combine(Application.persistentDataPath, "Custom");
         List<LevelData> levelList = new List<LevelData>();
         int index = 0;
-        string[] files = Directory.GetFiles(path).Where(file => file.EndsWith(".png")).ToArray();
+        string[] pngFiles = Directory.GetFiles(path, "*.png");
+        string[] binFiles = Directory.GetFiles(path, "*.bin");
+
+        foreach (var file in pngFiles) {
+            ImageLoader.Logger.LogInfo(file);
+        }
+        
+        var binNames = new HashSet<string>(binFiles.Select(f => Path.GetFileNameWithoutExtension(f)));
+        var pngMap = pngFiles
+            .ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f);
+        var binToPng = new Dictionary<string, string>();
+        foreach (var binFile in binFiles) {
+            string baseName = Path.GetFileNameWithoutExtension(binFile);
+            if (pngMap.TryGetValue(baseName, out var pngFile)) {
+                binToPng[binFile] = pngFile;
+            }
+        }
+        
+        var uncached = pngFiles
+            .Where(png => !binNames.Contains(Path.GetFileNameWithoutExtension(png)))
+            .ToList();
+        
+        // print dicts
+        
+        Logger.LogInfo("PNG to BIN mapping:");
+        foreach (var kvp in binToPng) {
+            Logger.LogInfo($"BIN: {kvp.Key}, PNG: {kvp.Value}");
+        }
+        Logger.LogInfo("Uncached PNG files:");
+        foreach (var file in uncached) {
+            Logger.LogInfo(file);
+        }
+
         var data = new ConcurrentDictionary<string, Tuple<string, int, int, int, int>>();
         var pixels = new ConcurrentDictionary<string, Color32[]>();
         var quantizedPixels = new ConcurrentDictionary<string, Color32[]>();
-        foreach (var file in files) {
+        foreach (var file in uncached) {
             byte[] fileData = File.ReadAllBytes(file);
             if (fileData.Length == 0) {
                 Logger.LogError($"Failed to read file data for {file}");
@@ -64,14 +96,14 @@ public static class ImageLoader {
         }
 
         // Process files for resizing on the main thread
-
-        Parallel.ForEach(files, file => {
+        Parallel.ForEach(uncached, file => {
             Logger.LogDebug("Starting quantization for " + data[file].Item1);
             quantizedPixels[file] = ImageProcessor.QuantizeImage(pixels[file], data[file].Item3);
             Logger.LogDebug("Quantized image for " + data[file].Item1);
         });
         
-        foreach (var file in files) {
+        foreach (var file in uncached) {
+            Logger.LogInfo(file);
             (int width, int height) = (data[file].Item4, data[file].Item5);
             string name = data[file].Item1;
             Texture2D quantizedImage = new Texture2D(width, height);
@@ -80,7 +112,7 @@ public static class ImageLoader {
             quantizedImage.Apply();
             Sprite sprite = Sprite.Create(quantizedImage, new Rect(0, 0, quantizedImage.width, quantizedImage.height), new Vector2(0.5f, 0.5f));
             Logger.LogDebug("Successfully created sprite for " + name);
-
+            
             Logger.LogDebug("Extracting colors...");
             List<(int, int, int)> colors_ = LevelDataCreator.ExtractColors(quantizedImage);
             LevelDataCreator creator = new LevelDataCreator(quantizedImage, colors_);
@@ -96,7 +128,48 @@ public static class ImageLoader {
             };
             levelList.Add(level);
             Logger.LogInfo("Loaded " + name);
+            // save level data to bin
+            string binFile = Path.Combine(path, Path.GetFileNameWithoutExtension(file) + ".bin");
+            using (FileStream fs = new FileStream(binFile, FileMode.Create, FileAccess.Write)) {
+                using (BinaryWriter writer = new BinaryWriter(fs)) {
+                    foreach (var item in level.fullLevelData) {
+                        writer.Write(item);
+                    }
+                }
+            }
+        }
+        
+        foreach (var file in binFiles) {
+            string basename = Path.GetFileNameWithoutExtension(file);
+            byte[] fileData = File.ReadAllBytes(file);
+            byte[] image = File.ReadAllBytes(binToPng[file]);
+            Texture2D texture = new Texture2D(2, 2); // Temporary size, will adjust to the image size
+            bool isLoaded = texture.LoadImage(image); // Automatically resizes the texture
+            if (!isLoaded) {
+                Logger.LogError($"Failed to load image data into texture for {file}");
+                continue;
+            }
+            Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
             
+            if (fileData.Length == 0) {
+                Logger.LogError($"Failed to read file data for {file}");
+                continue;
+            }
+            
+            index = Interlocked.Increment(ref index) - 1;
+            string pattern = @"^.+/(?<name>.+?)_(?<dimension>\d+?)_(?<colors>\d+)\.bin";
+            Regex regex = new Regex(pattern);
+
+            Match match = regex.Match(file);
+            string name = match.Success ? match.Groups["name"].Value : file;
+            LevelData level = new LevelData(new[] { name, "Custom", "" }, index, null) {
+                fullLevelData = new short[fileData.Length / 2],
+                saveFile = name,
+                levelSprite = sprite
+            };
+            Buffer.BlockCopy(fileData, 0, level.fullLevelData, 0, fileData.Length);
+            levelList.Add(level);
+            Logger.LogInfo("Loaded " + name);
         }
 
         levels = levelList.ToArray();
