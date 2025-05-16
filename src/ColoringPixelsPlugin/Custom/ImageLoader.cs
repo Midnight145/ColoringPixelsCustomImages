@@ -110,6 +110,7 @@ public static class ImageLoader {
                 byte[] buffer = File.ReadAllBytes(value);
                 levelData = new short[buffer.Length / 2];
                 Buffer.BlockCopy(buffer, 0, levelData, 0, buffer.Length);
+                CreateImageSprites(levelData);
             }
             
             index -= 1;
@@ -141,6 +142,17 @@ public static class ImageLoader {
             using (BinaryWriter writer = new BinaryWriter(fs)) {
                 foreach (var item in levelData) {
                     writer.Write(item);
+                }
+            }
+        }
+    }
+
+    private static void CreateImageSprites(short[] levelData) {
+        int colorCount = levelData[2 + levelData[0] * levelData[1]];
+        if (colorCount >= 99) {
+            if (CustomSprites.sprites.Count < colorCount - 99) {
+                for (int i = 0; i < colorCount - 99; i++) {
+                    CustomSprites.CreateSprite(i);
                 }
             }
         }
