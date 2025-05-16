@@ -14,6 +14,8 @@ using UnityEngine;
 
         public static BookDetails[] AddCustomBook() {
             R allBookDetails = R.of(typeof(AllBookDetails));
+            // we have to use private inst_ here because inst is a property
+            // if we use the public inst we recur forever because this method is called from the property getter
             var inst = allBookDetails.GetField("_inst") as BookDetails[];
             if (!BookLoader.register) {
                 return inst;

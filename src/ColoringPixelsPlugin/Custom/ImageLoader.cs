@@ -13,8 +13,12 @@ public static class ImageLoader {
     public static LevelData[] levels;
 
     private static readonly ManualLogSource Logger = CustomImagesPlugin.Log;
+    private static bool initialized = false;
 
     public static void Init() {
+        if (initialized) {
+            return;
+        }
         ImageLoader.Logger.LogInfo("Loading Custom Levels");
         string path = Path.Combine(Application.persistentDataPath, "Custom");
         var levelList = new List<LevelData>();
@@ -123,6 +127,7 @@ public static class ImageLoader {
         }
 
         levels = levelList.ToArray();
+        initialized = true;
         
         // clear the dictionaries to free up memory
         quantizedPixels.Clear();
