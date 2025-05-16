@@ -15,8 +15,6 @@ namespace ColoringPixelsMod {
         
         private void Awake() {
             Harmony harmony = new Harmony(CustomImagesPlugin.ModGuid);
-            Harmony.DEBUG = true;
-            HarmonyFileLog.Enabled = true;
             harmony.PatchAll();
             Log.LogInfo(CustomImagesPlugin.ModName + " (" + CustomImagesPlugin.ModGuid + ") @ " + CustomImagesPlugin.ModVersion + " loaded!");
         }

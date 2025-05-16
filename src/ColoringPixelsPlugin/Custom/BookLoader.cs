@@ -3,18 +3,18 @@ using ColoringPixelsMod;
 using UnityEngine;
 
     public class BookLoader : MonoBehaviour {
-        private static readonly string bookName = "Custom";
-        private static readonly int hash = -1;
-        private static readonly int achievementID = -1;
-        private static readonly string achievementName = "";
-        private static readonly string discordImageId = "";
-        private static readonly BookType bookType = BookType.Free;
+        private const string bookName = "Custom";
+        private const int hash = -1;
+        private const int achievementID = -1;
+        private const string achievementName = "";
+        private const string discordImageId = "";
+        private const BookType bookType = BookType.Free;
         private static readonly string path = Path.Combine(Application.persistentDataPath, "Custom");
         private static readonly bool register = Directory.Exists(BookLoader.path);
 
         public static BookDetails[] AddCustomBook() {
             R allBookDetails = R.of(typeof(AllBookDetails));
-            BookDetails[] inst = allBookDetails.GetField("_inst") as BookDetails[];
+            var inst = allBookDetails.GetField("_inst") as BookDetails[];
             if (!BookLoader.register) {
                 return inst;
             }

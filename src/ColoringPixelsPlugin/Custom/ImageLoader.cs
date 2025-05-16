@@ -97,7 +97,7 @@ public static class ImageLoader {
             quantizedPixels[file] = ImageProcessor.QuantizeImage(pixels[file], data[file].Item2);
             Logger.LogDebug("Quantized image for " + data[file].Item1);
         });
-        
+
         foreach (string file in pngFiles) {
             short[] levelData;
             string name = data[file].Item1;
@@ -121,8 +121,13 @@ public static class ImageLoader {
             };
             levelList.Add(level);
         }
-        
+
         levels = levelList.ToArray();
+        
+        // clear the dictionaries to free up memory
+        quantizedPixels.Clear();
+        pixels.Clear();
+        data.Clear();
     }
 
     private static short[] CreateLevelData(int width, int height, Color32[] pixels) {
@@ -130,8 +135,8 @@ public static class ImageLoader {
         quantizedImage.SetPixels32(pixels);
         quantizedImage.Apply();
         Logger.LogDebug("Extracting colors...");
-        List<(int, int, int)> colors_ = LevelDataCreator.ExtractColors(quantizedImage);
-        LevelDataCreator creator = new LevelDataCreator(quantizedImage, colors_);
+        List<(int, int, int)> colors = LevelDataCreator.ExtractColors(quantizedImage);
+        LevelDataCreator creator = new LevelDataCreator(quantizedImage, colors);
 
         return creator.CreateLevelData().Select(item => (short)item).ToArray();
     }
@@ -140,7 +145,7 @@ public static class ImageLoader {
         string binFile = Path.Combine(path, Path.GetFileNameWithoutExtension(file) + ".bin");
         using (FileStream fs = new FileStream(binFile, FileMode.Create, FileAccess.Write)) {
             using (BinaryWriter writer = new BinaryWriter(fs)) {
-                foreach (var item in levelData) {
+                foreach (short item in levelData) {
                     writer.Write(item);
                 }
             }
@@ -217,19 +222,9 @@ internal class LevelDataCreator {
     
     public static List<(int, int, int)> ExtractColors(Texture2D texture)
     {
-        var uniqueColors = new HashSet<(int, int, int)>();
-        Color32[] pixels = texture.GetPixels32();
-
-        foreach (Color32 pixel in pixels)
-        {
-            // Ignore fully transparent pixels
-            if (pixel.a == 0)
-                continue;
-
-            // Add unique (R, G, B) color
-            uniqueColors.Add((pixel.r, pixel.g, pixel.b));
-        }
-
-        return new List<(int, int, int)>(uniqueColors);
+        return texture.GetPixels32()
+            .Where(p => p.a != 0)
+            .Select(p => ((int) p.r, (int) p.g, (int) p.b))
+            .ToList();
     }
 }

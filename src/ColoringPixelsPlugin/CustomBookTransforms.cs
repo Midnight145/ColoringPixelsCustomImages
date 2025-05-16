@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using ColoringPixelsMod;
-using ColoringPixelsMod.Custom;
 using HarmonyLib;
 
 
@@ -64,10 +63,10 @@ namespace ColoringPixelsPlugin.Transform {
     [HarmonyPatch(typeof(ClickTest))]
     [HarmonyPatch("Setup")]
     [HarmonyPatch(new Type[] {  })]
-    public class TransformClickTest_CustomBook_Setup {
-        private static MethodInfo toCall = typeof(CustomUtil).GetMethod("ExpandTileset");
+    public class TransformClickTest_Setup {
+        private static MethodInfo toCall = typeof(CustomSprites).GetMethod("ExpandTileset");
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-            var targetMethod = TransformClickTest_CustomBook_Setup.toCall;
+            var targetMethod = TransformClickTest_Setup.toCall;
 
             if (targetMethod is null) {
                 throw new Exception("Failed to find the target method in CustomUtil.");
