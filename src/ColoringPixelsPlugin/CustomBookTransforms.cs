@@ -14,34 +14,37 @@ namespace ColoringPixelsPlugin.Transform {
     public class TransformMainMenuBookSpawner_RefreshMainMenuBooks {
         private static MethodInfo toCall = typeof(BookLoader).GetMethod("AddSection");
         
+        /*
+         * Injects a call to BookLoader.AddSection() into MainMenuBookSpawner.RefreshMainMenuBooks()
+         */
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-            if (TransformMainMenuBookSpawner_RefreshMainMenuBooks.toCall is null) {
+            var targetMethod = TransformMainMenuBookSpawner_RefreshMainMenuBooks.toCall;
+
+            if (targetMethod is null) {
                 throw new Exception("Failed to find the target method in BookLoader.");
             }
-            
-            int count = 0;
-            bool found = false;
+
+            int toArrayCallCount = 0;
+            bool injected = false;
+
             foreach (var instruction in instructions) {
-                if (!found) {
-                    if (instruction.opcode == OpCodes.Call && instruction.operand is MethodInfo method) {
-                        if (method.Name == "ToArray") {
-                            count += 1;
-                            if (count == 8) {
-                                CodeInstruction insn = new CodeInstruction(OpCodes.Call,
-                                    TransformMainMenuBookSpawner_RefreshMainMenuBooks.toCall);
-                                CustomImagesPlugin.Log.LogInfo($"Inserting Custom Instruction: {insn.opcode} - {insn.operand}");
-                                yield return insn;
-                                found = true;
-                            }
-                        }
+                if (!injected && instruction.opcode == OpCodes.Call && instruction.operand is MethodInfo method && method.Name == "ToArray") {
+                    toArrayCallCount++;
+                    // 8th call to ToArray() is the one we want to inject after
+                    // Located right before the try block (currently line 71)
+                    if (toArrayCallCount == 8) {
+                        CodeInstruction callInsn = new CodeInstruction(OpCodes.Call, targetMethod);
+                        yield return callInsn;
+                        CustomImagesPlugin.Log.LogInfo($"Injected call to: {targetMethod} ({callInsn.opcode}) {callInsn.operand}");
+                        injected = true;
                     }
                 }
 
                 yield return instruction;
             }
 
-            if (found is false) {
-                throw new Exception("Failed to find the target method in MainMenuBookSpawner.");
+            if (!injected) {
+                throw new Exception("Failed to insert custom method call in MainMenuBookSpawner.");
             }
         }
     }
@@ -54,36 +57,39 @@ namespace ColoringPixelsPlugin.Transform {
         }
     }
 
+
+    /*
+     * Injects a call to CustomUtil.ExpandTileset() into ClickTest.Setup()
+     */
     [HarmonyPatch(typeof(ClickTest))]
     [HarmonyPatch("Setup")]
     [HarmonyPatch(new Type[] {  })]
     public class TransformClickTest_CustomBook_Setup {
         private static MethodInfo toCall = typeof(CustomUtil).GetMethod("ExpandTileset");
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-            CustomImagesPlugin.Log.LogInfo($"TransformClickTest_CustomBook_Setup");
-            if (TransformClickTest_CustomBook_Setup.toCall is null) {
+            var targetMethod = TransformClickTest_CustomBook_Setup.toCall;
+
+            if (targetMethod is null) {
                 throw new Exception("Failed to find the target method in CustomUtil.");
             }
-            bool first = false;
-            bool found = false;
-            foreach (CodeInstruction instruction in instructions) {
-                CustomImagesPlugin.Log.LogInfo($"Current Instruction: {instruction.opcode} - {instruction.operand}");
-                if (!found && instruction.opcode == OpCodes.Blt) {
-                    CustomImagesPlugin.Log.LogInfo("Found Blt_S");
-                    if (!first) {
-                        CustomImagesPlugin.Log.LogInfo("Found First Blt_S");
-                        first = true;
-                        yield return instruction;
-                        continue;
-                    }
+            int bltCount = 0;
+            foreach (var instruction in instructions) {
+
+                if (instruction.opcode == OpCodes.Blt) {
+                    bltCount++;
                     yield return instruction;
-                    CustomImagesPlugin.Log.LogInfo("Found Second Blt_S");
-                    found = true;
-                    var insn = new CodeInstruction(OpCodes.Call, TransformClickTest_CustomBook_Setup.toCall);
-                    CustomImagesPlugin.Log.LogInfo($"Inserting Custom Instruction: {insn.opcode} - {insn.operand}");
-                    yield return insn;
+                    // 2nd blt is the one we want to inject after
+                    // Located right before the for loop containing SetSingleCell
+                    // Currently line 390
+                    if (bltCount == 2) {
+                        var callInsn = new CodeInstruction(OpCodes.Call,targetMethod);
+                        CustomImagesPlugin.Log.LogInfo($"Injected call to: {targetMethod.Name} ({callInsn.opcode}) {callInsn.operand}");
+                        yield return callInsn;
+                    }
+
                     continue;
                 }
+
                 yield return instruction;
             }
         }
