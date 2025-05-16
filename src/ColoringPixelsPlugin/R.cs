@@ -5,8 +5,8 @@ using HarmonyLib;
 
 namespace ColoringPixelsMod {
     public class R {
-        private object obj;
-        private Type type;
+        private readonly object obj;
+        private readonly Type type;
         
         public R(Type type) {
             this.type = type;
@@ -20,8 +20,13 @@ namespace ColoringPixelsMod {
         
         public object GetField(string fieldName) {
             FieldInfo field = AccessTools.Field(type, fieldName);
-            if (field == null) throw new MissingFieldException($"{type.Name}.{fieldName}");
             return field.GetValue(obj);
+        }
+        
+        public FieldInfo GetFieldInfo(string fieldName) {
+            FieldInfo field = AccessTools.Field(type, fieldName);
+            if (field == null) throw new MissingFieldException($"{type.Name}.{fieldName}");
+            return field;
         }
         
         public void SetField(string fieldName, object value) {
@@ -29,11 +34,16 @@ namespace ColoringPixelsMod {
         }
         
         public object CallMethod(string methodName, params object[] parameters) {
-            var method = AccessTools.Method(type, methodName, parameters.Select(p => p?.GetType()).ToArray());
-            if (method == null) throw new MissingMethodException($"{type.Name}.{methodName}");
+            MethodInfo method = GetMethodInfo(methodName, parameters.Select(p => p.GetType()).ToArray());
             return method.Invoke(obj, parameters);
         }
 
+        public MethodInfo GetMethodInfo(string methodName, params Type[] parameterTypes) {
+            MethodInfo method = AccessTools.Method(type, methodName, parameterTypes);
+            if (method == null) throw new MissingMethodException($"{type.Name}.{methodName}");
+            return method;
+        }
+        
         public static R of(Type type) {
             return new R(type);
         }
