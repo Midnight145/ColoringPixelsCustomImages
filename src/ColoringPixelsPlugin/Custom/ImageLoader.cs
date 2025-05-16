@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using BepInEx.Logging;
 using ColoringPixelsMod;
@@ -26,17 +27,15 @@ public static class ImageLoader {
         int index = 0;
         string[] pngFiles = Directory.GetFiles(path, "*.png");
 
-        var fileMap = new Dictionary<string, string>();
+        // pngfile : binfile mapping
+        var cachedFiles = new Dictionary<string, string>();
         foreach (string pngFile in pngFiles) {
             string baseName = Path.GetFileNameWithoutExtension(pngFile);
             string binFile = Path.Combine(path, baseName + ".bin");
             if (File.Exists(binFile)) {
-                fileMap.Add(pngFile, binFile);
+                cachedFiles.Add(pngFile, binFile);
             }
         }
-        List<string> uncached = pngFiles
-            .Where(png => !fileMap.ContainsKey(png))
-            .ToList();
 
 //          Name, Colors, Width, Height, Sprite, Texture
         var data = new ConcurrentDictionary<string, Tuple<string, int, int, int, Sprite, Texture2D>>();
@@ -76,9 +75,10 @@ public static class ImageLoader {
             int width = texture.width;
             int height = texture.height;
             Texture2D qtexture = null;
-            if (!fileMap.ContainsKey(file)) {
+            if (!cachedFiles.ContainsKey(file)) {
                 // Resize the image if necessary
                 // Used to later make the level data, but that's not needed if loading from cache.
+                // This also has to be done on the main thread, so we can't parallelize this.
                 Texture2D resizedImage = ImageProcessor.ResizeImage(texture, dimension);
                 Logger.LogDebug("Resized image to " + resizedImage.width + "x" + resizedImage.height);
                 width = resizedImage.width;
@@ -90,6 +90,7 @@ public static class ImageLoader {
 
         }
 
+        // The rest of this can be parallelized, which is good because it takes a while for the quantization of large images.
         Parallel.ForEach(pngFiles, file => {
             string name = data[file].Item1;
             int colors = data[file].Item2, width = data[file].Item3, height = data[file].Item4;
@@ -98,7 +99,7 @@ public static class ImageLoader {
             Logger.LogInfo($"Loading {name} ({width}x{height}) with {colors} colors");
 
 
-            if (uncached.Contains(file)) {
+            if (!cachedFiles.ContainsKey(file)) {
                 Logger.LogDebug("Starting quantization for " + name);
                 Color32[] quantizedPixels = ImageProcessor.QuantizeImage(qtexture.GetPixels32(), colors);
                 qtexture.SetPixels32(quantizedPixels);
@@ -106,7 +107,7 @@ public static class ImageLoader {
             }
             short[] levelData;
 
-            if (!fileMap.TryGetValue(file, out string value)) {
+            if (!cachedFiles.TryGetValue(file, out string value)) {
                 levelData = CreateLevelData(qtexture);
                 CreateCache(path, file, levelData);
             }
@@ -116,8 +117,8 @@ public static class ImageLoader {
                 Buffer.BlockCopy(buffer, 0, levelData, 0, buffer.Length);
                 // CreateImageSprites(levelData);
             }
-            index -= 1;
-            LevelData level = new LevelData(new[] { name, "Custom", "" }, index, null) {
+            int currentIndex = Interlocked.Decrement(ref index);
+            LevelData level = new LevelData(new[] { name, "Custom", "" }, currentIndex, null) {
                 fullLevelData = levelData.ToArray(),
                 saveFile = name,
                 levelSprite = sprite
@@ -153,7 +154,6 @@ public static class ImageLoader {
     }
 
     private static void CreateImageSprites(int count) {
-        ImageLoader.Logger.LogInfo("Creating image sprites for " + count);
         if (count >= 99) {
             if (CustomSprites.sprites.Count < count - 99) {
                 for (int i = 0; i < count - 99; i++) {
