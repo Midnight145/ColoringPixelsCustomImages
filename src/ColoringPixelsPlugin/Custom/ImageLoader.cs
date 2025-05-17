@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using BepInEx.Logging;
 using ColoringPixelsMod;
 using UnityEngine;
+using Logger = BepInEx.Logging.Logger;
 
 namespace ColoringPixelsPlugin.Custom {
 
@@ -233,10 +234,29 @@ namespace ColoringPixelsPlugin.Custom {
         }
 
         public static List<(short, short, short)> ExtractColors(Texture2D texture) {
-            return texture.GetPixels32()
-                .Where(p => p.a != 0)
-                .Select(p => ((short)p.r, (short)p.g, (short)p.b)).Distinct()
-                .ToList();
+            Color32[] pixels = texture.GetPixels32();
+            var colorCounts = new Dictionary<int, int>();
+            
+            foreach (Color32 color in pixels.Where(color => color.a != 0)) {
+                int id = GetId(color);
+                if (colorCounts.ContainsKey(id)) {
+                    colorCounts[id]++;
+                } else {
+                    colorCounts[id] = 1;
+                }
+            }
+
+            return colorCounts
+                .OrderByDescending(kvp => kvp.Value)
+                .Select(kvp => Unpack(kvp.Key)).ToList();
+
+            static (short, short, short) Unpack(int id) {
+                return ((short)((id >> 16) & 0xFF), (short)((id >> 8) & 0xFF), (short)(id & 0xFF));
+            }
+
+            static int GetId(Color32 color) {
+                return (color.r << 16) | (color.g << 8) | color.b;
+            }
         }
     }
 }
