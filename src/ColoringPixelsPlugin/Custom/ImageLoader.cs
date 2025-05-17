@@ -250,13 +250,16 @@ namespace ColoringPixelsPlugin.Custom {
                 .OrderByDescending(kvp => kvp.Value)
                 .Select(kvp => Unpack(kvp.Key)).ToList();
 
-            static (short, short, short) Unpack(int id) {
-                return ((short)((id >> 16) & 0xFF), (short)((id >> 8) & 0xFF), (short)(id & 0xFF));
-            }
+            
+        }
+        
+        static (short, short, short) Unpack(int id) {
+            return ((short)((id >> 16) & 0xFF), (short)((id >> 8) & 0xFF), (short)(id & 0xFF));
+        }
 
-            static int GetId(Color32 color) {
-                return (color.r << 16) | (color.g << 8) | color.b;
-            }
+        static int GetId(Color32 color) {
+            return (color.r << 16) | (color.g << 8) | color.b;
         }
     }
+    
 }
