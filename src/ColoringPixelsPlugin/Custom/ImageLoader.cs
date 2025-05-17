@@ -11,17 +11,30 @@ using ColoringPixelsMod;
 using UnityEngine;
 
 public static class ImageLoader {
-    public static LevelData[] levels;
+    public static Dictionary<string, LevelData[]> books = new Dictionary<string, LevelData[]>();
 
     private static readonly ManualLogSource Logger = CustomImagesPlugin.Log;
     private static bool initialized;
 
-    public static void Init() {
-        if (initialized) {
+    public static void Initialize() {
+        if (ImageLoader.initialized) {
             return;
         }
         ImageLoader.Logger.LogInfo("Loading Custom Levels");
-        string path = Path.Combine(Application.persistentDataPath, "Custom");
+        string path = Path.Combine(Application.persistentDataPath, "CustomBooks");
+        string[] subfolders = Directory.GetDirectories(path, "*", SearchOption.TopDirectoryOnly).Select(Path.GetFileName)
+            .ToArray();;
+        foreach(string subfolder in subfolders)
+        {
+            InitBook(path, subfolder);
+            CustomBook _ = new CustomBook(path, subfolder);
+        }
+    }
+
+
+    private static void InitBook(string bookPath, string bookName) {
+        ImageLoader.Logger.LogInfo("Loading Book: " + bookName);
+        string path = Path.Combine(bookPath, bookName);
         var levelList = new ConcurrentBag<LevelData>();
 
         int index = 0;
@@ -39,7 +52,7 @@ public static class ImageLoader {
 
 //          Name, Colors, Width, Height, Sprite, Texture
         var data = new ConcurrentDictionary<string, Tuple<string, int, int, int, Sprite, Texture2D>>();
-        const string pattern = @"^.+/(?<name>.+?)_(?<dimension>\d+?)_(?<colors>\d+)\.png$";
+        const string pattern = @"^(?<name>.+?)_(?<dimension>\d+?)_(?<colors>\d+)$";
         Regex regex = new Regex(pattern);
 
         foreach (string file in pngFiles) {
@@ -58,7 +71,8 @@ public static class ImageLoader {
 
             Logger.LogDebug("Processing file " + file);
 
-            Match match = regex.Match(file);
+            string filename = Path.GetFileNameWithoutExtension(file);
+            Match match = regex.Match(filename);
             string name;
             int dimension, colors;
             if (match.Success) {
@@ -66,8 +80,8 @@ public static class ImageLoader {
                 dimension = int.Parse(match.Groups["dimension"].Value);
                 colors = int.Parse(match.Groups["colors"].Value);
             } else {
-                name = file;
-                dimension = Math.Max(texture.width, texture.height);
+                name = filename;
+                dimension = Math.Min(500, Math.Max(texture.width, texture.height));
                 colors = 99;
             }
 
@@ -127,7 +141,7 @@ public static class ImageLoader {
         });
         int maxColorCount = data.Values.Max(t => t.Item2);
         CreateImageSprites(maxColorCount);
-        levels = levelList.ToArray();
+        books[bookName] = levelList.ToArray();
 
         initialized = true;
 

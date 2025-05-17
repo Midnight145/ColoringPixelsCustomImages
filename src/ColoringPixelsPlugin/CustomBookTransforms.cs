@@ -11,13 +11,14 @@ namespace ColoringPixelsPlugin.Transform {
     [HarmonyPatch("RefreshMainMenuBooks")]
     [HarmonyPatch(new[] { typeof(string) })]
     public class TransformMainMenuBookSpawner_RefreshMainMenuBooks {
-        private static MethodInfo toCall = typeof(BookLoader).GetMethod("AddSection");
+        private static readonly MethodInfo toCall = typeof(BookLoader).GetMethod("AddSection");
         
         /*
          * Injects a call to BookLoader.AddSection() into MainMenuBookSpawner.RefreshMainMenuBooks()
          */
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
-            var targetMethod = TransformMainMenuBookSpawner_RefreshMainMenuBooks.toCall;
+        // ReSharper disable once UnusedMember.Local
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) {
+            MethodInfo targetMethod = TransformMainMenuBookSpawner_RefreshMainMenuBooks.toCall;
 
             if (targetMethod is null) {
                 throw new Exception("Failed to find the target method in BookLoader.");

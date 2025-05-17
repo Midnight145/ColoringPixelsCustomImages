@@ -40,7 +40,7 @@ public static class CustomSprites {
     
     // called from ClickTest via injected method in TransformClickTest_Setup
     public static void ExpandTileset() {
-        ClickTest clickTest = UnityEngine.Object.FindObjectOfType<ClickTest>();
+        ClickTest clickTest = Object.FindObjectOfType<ClickTest>();
         if (clickTest.tileNorm.Length < clickTest.colourPalette.Length) {
             Tile[] buffer = clickTest.tileNorm;
             clickTest.tileNorm = new Tile[clickTest.colourPalette.Length];
