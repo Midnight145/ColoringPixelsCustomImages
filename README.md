@@ -20,7 +20,12 @@ To create a custom book, create a folder called `CustomBooks` in the ColoringPix
 2. Linux: `~/.config/unity3d/ToastieLabs/ColoringPixels`.
 3. Mac: `~/Library/Application Support/ToastieLabs/ColoringPixels`. (needs verified)
 
-Drop your images into this folder, will the following naming convention:
+Make a new folder inside of the CustomBooks folder with whatever you want your book to be named.
+
+Example:
+- `C:\Users\<YourUsername>\AppData\LocalLow\ToastieLabs\ColoringPixels\CustomBooks\Pokemon`.
+
+Drop your images into this folder, and use the following naming convention:
 `imagename_maxres_colorcount.png`
 For example, `girl_200_8.png` will be an image called girl with a maximum side length of 200 pixels and 8 colors.
 
