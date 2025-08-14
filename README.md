@@ -25,7 +25,7 @@ Make a new folder inside of the CustomBooks folder with whatever you want your b
 Example:
 - `C:\Users\<YourUsername>\AppData\LocalLow\ToastieLabs\ColoringPixels\CustomBooks\Pokemon`.
 
-Drop your images into this folder, and use the following naming convention:
+Drop your images into this folder, and use the following naming convention (optional):
 `imagename_maxres_colorcount.png`
 For example, `girl_200_8.png` will be an image called girl with a maximum side length of 200 pixels and 8 colors.
 
@@ -34,3 +34,5 @@ The plugin expands the color count to up to 999 colors, so you can use any numbe
 If you set the maxres and colorcount to something greater than what the corresponding image has, the game will lower the values as necessary.
 
 For example, if I have a 100x50 image with 4 colors, and I name the file `image_200_8.png`, the game will automatically adjust the maxres to 100 and the colorcount to 4.
+
+If you don't use the naming convention, the defaults will be a max side length of 500 and a color count of 99.
