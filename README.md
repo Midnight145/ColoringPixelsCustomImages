@@ -18,7 +18,7 @@ This mod will not unlock access to any DLC that you haven't purchased, nor will 
 To create a custom book, create a folder called `CustomBooks` in the ColoringPixels save directory. 
 1. Windows: `C:\Users\<YourUsername>\AppData\LocalLow\ToastieLabs\ColoringPixels`.
 2. Linux: `~/.config/unity3d/ToastieLabs/ColoringPixels`.
-3. Mac: `~/Library/Application Support/ToastieLabs/ColoringPixels`. (needs verified)
+3. Mac: `~/Library/Application Support/ToastieLabs/ColoringPixels`.
 
 Make a new folder inside of the CustomBooks folder with whatever you want your book to be named.
 
