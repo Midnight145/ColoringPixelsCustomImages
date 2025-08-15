@@ -10,9 +10,10 @@ This mod will not unlock access to any DLC that you haven't purchased, nor will 
 
 ## How to use it
 
-1. Install BepInEx
+1. Install [BepInEx (x86)](https://docs.bepinex.dev/articles/user_guide/installation/index.html)
 2. Download the latest release of this plugin from the [releases page](https://github.com/Midnight145/ColoringPixelsCustomImages/releases)
 3. Install the plugin by placing the downloaded `.dll` file into the `BepInEx/plugins` directory of your ColoringPixels installation.
+4. Download the [spritesheet.png](https://raw.githubusercontent.com/Midnight145/ColoringPixelsCustomImages/refs/heads/master/spritesheet.png) file and place it in the ColoringPixels installation directory.
 
 ## Loading Images
 To create a custom book, create a folder called `CustomBooks` in the ColoringPixels save directory. 
