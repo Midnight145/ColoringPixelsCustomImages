@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using ColoringPixelsMod;
 using UnityEngine;
 
@@ -46,12 +48,18 @@ namespace ColoringPixelsPlugin.Custom {
             bookDetails.steamAchievement = CustomBook.achievementName;
             bookDetails.discordImageId = CustomBook.discordImageId;
             bookDetails.bookType = bookType;
-            bookDetails.levels = ImageLoader.books[this.bookName];
+            bookDetails.levels = ImageLoader.books[this.bookName].OrderBy(CustomBook.ExtractNumericPrefix).ThenBy(s => s.displayName).ToArray();
             return bookDetails;
         }
 
         public BookDetails GetBookDetails() {
             return this.GetBookDetails(this.index);
+        }
+        
+        private static int ExtractNumericPrefix(LevelData levelData)
+        {
+            var match = Regex.Match(levelData.displayName, @"^\d+");
+            return match.Success ? int.Parse(match.Value) : int.MaxValue;
         }
     }
 }
